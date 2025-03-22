@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   influxdb:
     image: influxdb:2.1.1
@@ -12,27 +10,27 @@ services:
     ports:
       - ${DOCKER_INFLUXDB_INIT_PORT}:8086
 
-  zeek:
-    image: zeek/zeek
+  slips:
+    image: stratosphereips/slips_macos_m1:latest
     volumes:
-      - zeek-logs:/usr/local/zeek/logs
-    command: zeekctl deploy
+      - slips-logs:/StratosphereLinuxIPS/output
+    command: ["/bin/sh", "-c", "rm -rf /StratosphereLinuxIPS/output/* && ./slips.py -i eth0"]   # change interface for another app
     cap_add:
       - NET_RAW
       - NET_ADMIN
     network_mode: host
-    restart: unless-stopped
+    # restart: unless-stopped
 
   telegraf:
     image: telegraf:1.19
     volumes:
-      - ${TELEGRAF_CFG_PATH}:/etc/telegraf/telegraf.conf:rw
-      - zeek-logs:/usr/local/zeek/logs/current:ro
+      - ${TELEGRAF_CFG_PATH}:/etc/telegraf/telegraf.conf:ro
+      - slips-logs:/slips-logs:ro
     env_file:
       - .env
     depends_on:
       - influxdb
-      - zeek
+      - slips
 
   grafana:
     image: grafana/grafana-oss:8.4.3
@@ -46,4 +44,4 @@ services:
 volumes:
   grafana-storage:
   influxdb-storage:
-  zeek-logs:
+  slips-logs:
